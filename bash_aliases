@@ -1,0 +1,5 @@
+alias vi="vim"
+alias cls="clear"
+alias gitf="git fetch"
+alias gits="git status"
+alias la="ls -a"
