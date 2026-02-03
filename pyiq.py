@@ -6,7 +6,7 @@ import pyqtgraph as pg # sudo pip3 install pyqtgraph
 import numpy as np
 
 class Slider(QWidget):
-    def __init__(self, minimum, maximum, prefix):
+    def __init__(self, minimum, maximum, prefix, step=0):
         super(Slider, self).__init__()
         self.verticalLayout = QVBoxLayout(self)
         self.label = QLabel(self)
@@ -34,12 +34,13 @@ class Widget(QWidget):
         self.Layout = QGridLayout(self)
         self.w1 = Slider(-2, 2, 'I = ')
         self.Layout.addWidget(self.w1, 0, 0)
-        self.p1 = Slider(0, 2*np.pi, 'phase_I = ')
+        self.p1 = Slider(0, 2*np.pi, 'phase = ')
         self.Layout.addWidget(self.p1, 0, 1)
         self.w2 = Slider(-2, 2, 'Q = ')
         self.Layout.addWidget(self.w2, 1, 0)
-        self.p2 = Slider(0, 2*np.pi, 'phase_Q = ')
-        self.Layout.addWidget(self.p2, 1, 1)
+        self.t = Slider(0, 10, 't = ')
+        # self.t.slider.setSingleStep(10)
+        self.Layout.addWidget(self.t, 1, 1)
         self.win = pg.GraphicsLayoutWidget()
         self.win.setBackground('w')
         self.Layout.addWidget(self.win, 2, 0)
@@ -48,6 +49,7 @@ class Widget(QWidget):
         self.curve_I = self.plot.plot(pen=pg.mkPen('r', width=5), name="I*cos()")
         self.curve_Q = self.plot.plot(pen=pg.mkPen('b', width=5), name="Q*sin()")
         self.curve_sum = self.plot.plot(pen=pg.mkPen('#00991c', width=5, style=Qt.DotLine), name="I*cos() + Q*sin()")
+        self.point_t = self.plot.plot(pen=None, symbol='o', symbolSize=10, symbolBrush='r', name="t")
         
         self.constellation = pg.GraphicsLayoutWidget()
         self.constellation.setBackground('w')
@@ -55,14 +57,17 @@ class Widget(QWidget):
         self.IQplot = self.constellation.addPlot()
         # legend = self.IQplot.addLegend(offset=5) # move legend, still not quite sure how this one works
         self.curve_IQ = self.IQplot.scatterPlot(pen=pg.mkPen('b', width=5), name="IQ")
+        self.point_IQ = self.IQplot.plot(pen=None, symbol='o', symbolSize=10, symbolBrush='r', name="IQ_Point")
 
         self.update_plot()
         self.plot.setXRange(0, 150)
         self.plot.setYRange(-3, 3)
+        self.IQplot.setXRange(-2,2)
+        self.IQplot.setYRange(-2,2)
         self.w1.slider.valueChanged.connect(self.update_plot)
         self.p1.slider.valueChanged.connect(self.update_plot)
         self.w2.slider.valueChanged.connect(self.update_plot)
-        self.p2.slider.valueChanged.connect(self.update_plot)
+        self.t.slider.valueChanged.connect(self.update_plot)
         
         # Make lines/ticks black
         font=QFont()
@@ -89,9 +94,11 @@ class Widget(QWidget):
     def update_plot(self):
         x = np.linspace(0, 10, 150)
         self.curve_I.setData((self.w1.x*np.sin(x+self.p1.x))*np.cos(2*np.pi*x))
-        self.curve_Q.setData((self.w2.x*np.sin(x+self.p2.x))*np.sin(2*np.pi*x))
-        self.curve_sum.setData((self.w1.x*np.sin(x+self.p1.x))*np.cos(2*np.pi*x) + (self.w2.x*np.sin(x+self.p2.x))*np.sin(2*np.pi*x))
-        self.curve_IQ.setData((self.w1.x*np.sin(x+self.p1.x))*np.cos(2*np.pi*x), (self.w2.x*np.sin(x+self.p2.x))*np.sin(2*np.pi*x))
+        self.curve_Q.setData((self.w2.x*np.sin(x+self.p1.x))*np.sin(2*np.pi*x))
+        self.curve_sum.setData((self.w1.x*np.sin(x+self.p1.x))*np.cos(2*np.pi*x) + (self.w2.x*np.sin(x+self.p1.x))*np.sin(2*np.pi*x))
+        self.point_t.setData([self.t.x*15], [(self.w1.x*np.sin(self.t.x+self.p1.x))*np.cos(2*np.pi*self.t.x) + (self.w2.x*np.sin(self.t.x+self.p1.x))*np.sin(2*np.pi*self.t.x)])
+        self.curve_IQ.setData((self.w1.x*np.sin(x+self.p1.x))*np.cos(2*np.pi*x), (self.w2.x*np.sin(x+self.p1.x))*np.sin(2*np.pi*x))
+        self.point_IQ.setData([(self.w1.x*np.sin(self.t.x+self.p1.x))*np.cos(2*np.pi*self.t.x)], [(self.w2.x*np.sin(self.t.x+self.p1.x))*np.sin(2*np.pi*self.t.x)])
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
